@@ -2,7 +2,6 @@
 -- PROGRAM 1
 -- Create Department Table
 -- ============================================================
-
 -- Student Name:
 -- Register Number:
 
