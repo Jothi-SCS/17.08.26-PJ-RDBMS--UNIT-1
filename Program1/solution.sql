@@ -27,11 +27,10 @@
 
 -- Create Department table
 
-CREATE TABLE Department
-(
-    DepartmentID   NUMBER(5) PRIMARY KEY,
-    DepartmentName VARCHAR(20) NOT NULL UNIQUE,
-    HOD            VARCHAR(20) NOT NULL
+CREATE TABLE Department (
+    DepartmentID NUMBER PRIMARY KEY,
+    DepartmentName VARCHAR2(100) UNIQUE,
+    HOD VARCHAR2(100)
 );
 
 -- Display table structure
