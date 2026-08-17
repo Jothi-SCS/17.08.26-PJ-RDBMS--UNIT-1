@@ -27,15 +27,7 @@
 
 -- Create Department table
 
-BEGIN
-    EXECUTE IMMEDIATE 'DROP TABLE Department CASCADE CONSTRAINTS';
-EXCEPTION
-    WHEN OTHERS THEN
-        IF SQLCODE != -942 THEN
-            RAISE;
-        END IF;
-END;
-/
+DROP TABLE IF  EXISTS Department;
 
 CREATE TABLE Department (
     DepartmentID NUMBER PRIMARY KEY,
