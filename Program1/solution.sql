@@ -27,10 +27,21 @@
 
 -- Create Department table
 
+BEGIN
+    EXECUTE IMMEDIATE 'DROP TABLE Department CASCADE CONSTRAINTS';
+EXCEPTION
+    WHEN OTHERS THEN
+        IF SQLCODE != -942 THEN
+            RAISE;
+        END IF;
+END;
+/
+
 CREATE TABLE Department (
     DepartmentID NUMBER PRIMARY KEY,
-    DepartmentName VARCHAR2(100) UNIQUE,
-    HOD VARCHAR2(100)
+    DepartmentName VARCHAR2(100),
+    HOD VARCHAR2(100),
+    CONSTRAINT UQ_DEPARTMENT_NAME UNIQUE (DepartmentName)
 );
 
 -- Display table structure
