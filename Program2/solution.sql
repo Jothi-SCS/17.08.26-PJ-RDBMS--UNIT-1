@@ -24,4 +24,21 @@
 
 -- Display the structure of Student table.
 
+-- ============================================================
+-- PROGRAM 2: CREATE STUDENT TABLE
+-- ============================================================
 
+-- Create Student table
+
+CREATE TABLE Student
+(
+    StudentID    NUMBER(5) PRIMARY KEY,
+    StudentName  VARCHAR(20) NOT NULL,
+    DOB          DATE,
+    Gender       VARCHAR(10) NOT NULL,
+    DepartmentID NUMBER(5)
+);
+
+-- Display table structure
+
+DESCRIBE Student;
