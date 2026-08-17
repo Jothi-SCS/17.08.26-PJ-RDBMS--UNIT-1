@@ -6,21 +6,13 @@ on:
 
 jobs:
   autograding:
-
     runs-on: ubuntu-latest
 
     steps:
 
-      # ==========================================
-      # 1. CHECKOUT REPOSITORY
-      # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
-      # ==========================================
-      # 2. START ORACLE DATABASE
-      # ==========================================
       - name: Start Oracle Database
         run: |
           docker run -d \
@@ -29,73 +21,39 @@ jobs:
             -e ORACLE_PASSWORD=Oracle123 \
             gvenzl/oracle-free:23-slim-faststart
 
-
-      # ==========================================
-      # 3. WAIT FOR ORACLE
-      # ==========================================
       - name: Wait for Oracle
         run: |
-          echo "Waiting for Oracle..."
-
-          for i in {1..60}
-          do
+          for i in {1..60}; do
             if docker logs oracle-db 2>&1 | grep -q "DATABASE IS READY TO USE"; then
               echo "Oracle is ready"
               break
             fi
-
             sleep 5
           done
 
-          if ! docker logs oracle-db 2>&1 | grep -q "DATABASE IS READY TO USE"; then
-            echo "Oracle failed to start"
-            docker logs oracle-db
-            exit 1
-          fi
-
-
-      # ==========================================
-      # 4. CREATE COLLEGEDB USER
-      # ==========================================
       - name: Create CollegeDB User
         run: |
           docker exec oracle-db bash -c "
           echo \"
           ALTER SESSION SET CONTAINER=FREEPDB1;
-
           CREATE USER collegeDB IDENTIFIED BY CollegeDB123;
-
           GRANT CONNECT, RESOURCE, CREATE SESSION,
                 CREATE TABLE, CREATE VIEW,
                 CREATE SEQUENCE, CREATE TRIGGER
           TO collegeDB;
-
           ALTER USER collegeDB QUOTA UNLIMITED ON USERS;
-
           EXIT;
           \" | sqlplus -s system/Oracle123@FREEPDB1
           "
 
-
-      # ==========================================
-      # 5. CREATE ASSIGNMENT DIRECTORY
-      # ==========================================
-      - name: Create Assignment Directory
-        run: |
-          docker exec oracle-db bash -c "
-            mkdir -p /assignment/Program1
-            mkdir -p /assignment/Program2
-            mkdir -p /assignment/Program3
-            mkdir -p /assignment/Program4
-            mkdir -p /assignment/Program5
-          "
-
-
-      # ==========================================
-      # 6. COPY FILES FROM YOUR REPOSITORY
-      # ==========================================
       - name: Copy Assignment Files
         run: |
+          docker exec oracle-db mkdir -p /assignment/Program1
+          docker exec oracle-db mkdir -p /assignment/Program2
+          docker exec oracle-db mkdir -p /assignment/Program3
+          docker exec oracle-db mkdir -p /assignment/Program4
+          docker exec oracle-db mkdir -p /assignment/Program5
+
           docker cp Program1/solution.sql oracle-db:/assignment/Program1/solution.sql
           docker cp Program2/solution.sql oracle-db:/assignment/Program2/solution.sql
           docker cp Program3/solution.sql oracle-db:/assignment/Program3/solution.sql
@@ -103,102 +61,53 @@ jobs:
           docker cp Program5/solution.sql oracle-db:/assignment/Program5/solution.sql
           docker cp autograder.sql oracle-db:/assignment/autograder.sql
 
-
-      # ==========================================
-      # 7. VERIFY FILES
-      # ==========================================
-      - name: Verify Assignment Files
+      - name: Verify Files
         run: |
-          echo "=========================================="
-          echo "CHECKING ASSIGNMENT FILES"
-          echo "=========================================="
+          docker exec oracle-db ls -l /assignment/Program1/solution.sql
+          docker exec oracle-db ls -l /assignment/Program2/solution.sql
+          docker exec oracle-db ls -l /assignment/Program3/solution.sql
+          docker exec oracle-db ls -l /assignment/Program4/solution.sql
+          docker exec oracle-db ls -l /assignment/Program5/solution.sql
+          docker exec oracle-db ls -l /assignment/autograder.sql
 
-          docker exec oracle-db bash -c "ls -l /assignment/Program1/solution.sql"
-          docker exec oracle-db bash -c "ls -l /assignment/Program2/solution.sql"
-          docker exec oracle-db bash -c "ls -l /assignment/Program3/solution.sql"
-          docker exec oracle-db bash -c "ls -l /assignment/Program4/solution.sql"
-          docker exec oracle-db bash -c "ls -l /assignment/Program5/solution.sql"
-          docker exec oracle-db bash -c "ls -l /assignment/autograder.sql"
-
-          echo "All files found."
-
-
-      # ==========================================
-      # 8. RUN PROGRAM 1
-      # ==========================================
       - name: Run Program 1
         run: |
           docker exec oracle-db bash -c \
           "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program1/solution.sql"
 
-
-      # ==========================================
-      # 9. RUN PROGRAM 2
-      # ==========================================
       - name: Run Program 2
         run: |
           docker exec oracle-db bash -c \
           "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program2/solution.sql"
 
-
-      # ==========================================
-      # 10. RUN PROGRAM 3
-      # ==========================================
       - name: Run Program 3
         run: |
           docker exec oracle-db bash -c \
           "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program3/solution.sql"
 
-
-      # ==========================================
-      # 11. RUN PROGRAM 4
-      # ==========================================
       - name: Run Program 4
         run: |
           docker exec oracle-db bash -c \
           "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program4/solution.sql"
 
-
-      # ==========================================
-      # 12. RUN PROGRAM 5
-      # ==========================================
       - name: Run Program 5
         run: |
           docker exec oracle-db bash -c \
           "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program5/solution.sql"
 
-
-      # ==========================================
-      # 13. RUN AUTOGRADER
-      # ==========================================
-      - name: Run Single Autograder
+      - name: Run Autograder
         run: |
           docker exec oracle-db bash -c \
           "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/autograder.sql" \
           2>&1 | tee autograder-output.txt
 
-
-      # ==========================================
-      # 14. CHECK FINAL RESULT
-      # ==========================================
       - name: Check Result
         run: |
-          echo ""
-          echo "=========================================="
-          echo "FINAL AUTOGRADER RESULT"
-          echo "=========================================="
-
           cat autograder-output.txt
-
-          echo ""
-          echo "=========================================="
 
           if grep -q "RESULT: PASSED" autograder-output.txt; then
             echo "AUTOGRADING PASSED"
-            echo "=========================================="
           else
             echo "AUTOGRADING FAILED"
-            echo "=========================================="
             exit 1
           fi
-```
