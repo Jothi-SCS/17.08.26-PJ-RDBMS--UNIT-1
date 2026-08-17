@@ -1,0 +1,109 @@
+name: CollegeDB Autograding
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  autograding:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start Oracle Database
+        run: |
+          docker run -d \
+            --name oracle-db \
+            -p 1521:1521 \
+            -e ORACLE_PASSWORD=Oracle123 \
+            gvenzl/oracle-free:23-slim-faststart
+
+      - name: Wait for Oracle
+        run: |
+          echo "Waiting for Oracle..."
+
+          for i in {1..60}
+          do
+            if docker logs oracle-db 2>&1 | grep -q "DATABASE IS READY TO USE"; then
+              echo "Oracle is ready"
+              break
+            fi
+
+            sleep 5
+          done
+
+      - name: Create CollegeDB User
+        run: |
+          docker exec oracle-db bash -c "
+          echo \"
+          ALTER SESSION SET CONTAINER=FREEPDB1;
+
+          CREATE USER collegeDB IDENTIFIED BY CollegeDB123;
+
+          GRANT CONNECT, RESOURCE, CREATE SESSION,
+                CREATE TABLE, CREATE VIEW,
+                CREATE SEQUENCE, CREATE TRIGGER
+          TO collegeDB;
+
+          ALTER USER collegeDB QUOTA UNLIMITED ON USERS;
+
+          EXIT;
+          \" | sqlplus -s system/Oracle123@FREEPDB1
+          "
+
+      - name: Copy Assignment Files
+        run: |
+          docker cp Program1 oracle-db:/assignment/
+          docker cp Program2 oracle-db:/assignment/
+          docker cp Program3 oracle-db:/assignment/
+          docker cp Program4 oracle-db:/assignment/
+          docker cp Program5 oracle-db:/assignment/
+          docker cp autograder.sql oracle-db:/assignment/
+
+      - name: Run Program 1
+        run: |
+          docker exec oracle-db bash -c \
+          "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program1/solution.sql"
+
+      - name: Run Program 2
+        run: |
+          docker exec oracle-db bash -c \
+          "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program2/solution.sql"
+
+      - name: Run Program 3
+        run: |
+          docker exec oracle-db bash -c \
+          "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program3/solution.sql"
+
+      - name: Run Program 4
+        run: |
+          docker exec oracle-db bash -c \
+          "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program4/solution.sql"
+
+      - name: Run Program 5
+        run: |
+          docker exec oracle-db bash -c \
+          "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/Program5/solution.sql"
+
+      - name: Run Single Autograder
+        run: |
+          docker exec oracle-db bash -c \
+          "sqlplus -s collegeDB/CollegeDB123@FREEPDB1 @/assignment/autograder.sql" \
+          | tee autograder-output.txt
+
+      - name: Check Result
+        run: |
+          if grep -q "RESULT: PASSED" autograder-output.txt; then
+            echo "======================================"
+            echo "AUTOGRADING PASSED"
+            echo "======================================"
+          else
+            echo "======================================"
+            echo "AUTOGRADING FAILED"
+            echo "======================================"
+            exit 1
+          fi
