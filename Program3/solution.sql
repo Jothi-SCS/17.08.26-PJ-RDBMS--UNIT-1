@@ -20,5 +20,22 @@
 
 
 -- WRITE YOUR DESCRIBE COMMAND BELOW
+-- ============================================================
+-- PROGRAM 3: ALTER STUDENT TABLE
+-- ============================================================
+
+-- Add Email column
+
+ALTER TABLE Student
+ADD Email VARCHAR(30);
+
+-- Add PhoneNumber column
+
+ALTER TABLE Student
+ADD PhoneNumber NUMBER(10);
+
+-- Display modified table structure
+
+DESCRIBE Student;
 
 
