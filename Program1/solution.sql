@@ -21,5 +21,20 @@
 
 
 -- Display the structure of Department table.
+-- ============================================================
+-- PROGRAM 1: CREATE DEPARTMENT TABLE
+-- ============================================================
 
+-- Create Department table
+
+CREATE TABLE Department
+(
+    DepartmentID   NUMBER(5) PRIMARY KEY,
+    DepartmentName VARCHAR(20) NOT NULL UNIQUE,
+    HOD            VARCHAR(20) NOT NULL
+);
+
+-- Display table structure
+
+DESCRIBE Department;
 
